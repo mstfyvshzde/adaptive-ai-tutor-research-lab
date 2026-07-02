@@ -1,0 +1,50 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.local
+
+# Data files
+02_data/raw/
+02_data/interim/
+02_data/processed/
+02_data/external/
+
+# Large files
+*.zip
+*.tar
+*.tar.gz
+*.csv
+*.parquet
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.h5
+
+# Results that can be regenerated
+06_results/saved_models/
+06_results/figures/
+06_results/tables/
+
+# Logs
+*.log
+logs/
