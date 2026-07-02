@@ -1,0 +1,16 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+jupyter
+notebook
+ipykernel
+pyyaml
+tqdm
+scipy
+xgboost
+lightgbm
+streamlit
+plotly
+pytest
