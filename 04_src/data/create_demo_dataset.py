@@ -209,3 +209,82 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
+# ------------------------------------------------------------
+# NOTES
+# ------------------------------------------------------------
+
+# This file creates a small synthetic demo dataset.
+# It does NOT replace the real EdNet dataset.
+# Its purpose is to test the project pipeline before using large real data.
+
+# Why do we create demo data first?
+# - Real educational datasets can be very large.
+# - Before using real data, we need to check whether our code structure works.
+# - This demo dataset helps us test preprocessing, feature engineering, modeling, and demo app logic.
+
+# Main output files:
+# - 07_demo/demo_data/demo_questions.csv
+# - 07_demo/demo_data/demo_interactions.csv
+
+# demo_questions.csv contains question metadata:
+# - question_id: unique question number
+# - part: broad topic name
+# - tags: skill or topic label
+# - difficulty: easy, medium, or hard
+# - difficulty_score: numeric difficulty value
+# - correct_answer: correct answer option
+
+# demo_interactions.csv contains student-question interactions:
+# - student_id: unique learner number
+# - timestamp: when the student answered the question
+# - solving_id: unique interaction/session id
+# - question_id: question answered by the student
+# - user_answer: student's selected answer
+# - correct_answer: correct option
+# - elapsed_time: time spent on the question
+# - part/tags: topic information
+# - difficulty/difficulty_score: question difficulty
+# - is_correct: target variable for supervised learning
+
+# Function summary:
+
+# create_question_metadata()
+# Creates synthetic questions with topic, difficulty, difficulty score, and correct answer.
+
+# create_student_profiles()
+# Creates hidden student ability profiles.
+# Each student has a general ability and different strengths for each topic.
+
+# simulate_answer()
+# Simulates whether a student answers a question correctly.
+# The probability of correctness depends on:
+# - student topic strength
+# - question difficulty
+# - random variation
+
+# create_interactions()
+# Creates the full student-question history.
+# It simulates multiple question attempts for each student and stores them as rows.
+
+# main()
+# Runs the full script:
+# 1. Creates question metadata
+# 2. Creates student profiles
+# 3. Creates interaction data
+# 4. Sorts interactions by student and time
+# 5. Saves both CSV files
+
+# Important project idea:
+# This script is the first safe step before real dataset processing.
+# If this demo dataset works, we can later replace it with real EdNet-KT1 data.
+
+# Important ML idea:
+# The column "is_correct" will become the first supervised learning target.
+# Later, models will try to predict whether a student answers the next question correctly.
+
+# Important research idea:
+# This dataset lets us test the adaptive tutor pipeline:
+# student history -> knowledge tracing -> recommendation -> RL policy -> evaluation
