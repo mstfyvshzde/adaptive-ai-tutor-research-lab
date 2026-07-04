@@ -67,13 +67,13 @@ def load_features(path: Path) -> pd.DataFrame:
 
     return dataframe
 
-
 def calculate_recent_accuracy(student_df: pd.DataFrame, window_size: int = 5) -> float:
     """Calculate recent accuracy for one student."""
 
-    recent_answers = student_df.sort_values('timestamp').tail(window_size)
+    recent_answers = student_df.sort_values("timestamp").tail(window_size)
 
-    return float(recent_answers['is_coreect'].mean())
+    return float(recent_answers["is_correct"].mean())
+
 
 
 def calculate_accuracy_change(student_df: pd.DataFrame) -> float:
