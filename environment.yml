@@ -1,0 +1,26 @@
+name: adaptive-ai-tutor
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - jupyter
+  - notebook
+  - ipykernel
+  - pyyaml
+  - tqdm
+  - scipy
+  - pytest
+  - streamlit
+  - plotly
+  - pip:
+      - xgboost
+      - lightgbm
