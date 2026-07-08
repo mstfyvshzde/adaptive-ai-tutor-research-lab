@@ -1,17 +1,30 @@
 """
-Validate the demo dataset for the Adaptive AI Tutor Research Lab.
+Validate the synthetic demo dataset.
 
-This script checks whether the generated demo dataset has the expected structure.
-It helps us catch data problems before moving to preprocessing and modeling.
+Goal:
+Check that demo_questions.csv and demo_interactions.csv are usable
+before feature engineering and modeling.
 """
 
 from pathlib import Path
 
 import pandas as pd
 
-INTERACTIONS_PATH = Path("07_demo/demo_data/demo_interactions.csv")
-QUESTIONS_PATH = Path("07_demo/demo_data/demo_questions.csv")
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+QUESTIONS_PATH = PROJECT_ROOT / "07_demo" / "demo_data" / "demo_questions.csv"
+INTERACTIONS_PATH = PROJECT_ROOT / "07_demo" / "demo_data" / "demo_interactions.csv"
+
+
+REQUIRED_QUESTION_COLUMNS = [
+    "question_id",
+    "part",
+    "tags",
+    "difficulty",
+    "difficulty_score",
+    "correct_answer",
+]
 
 REQUIRED_INTERACTION_COLUMNS = [
     "student_id",
@@ -29,177 +42,123 @@ REQUIRED_INTERACTION_COLUMNS = [
 ]
 
 
-REQUIRED_QUESTION_COLUMNS = [
-    "question_id",
-    "part",
-    "tags",
-    "difficulty",
-    "difficulty_score",
-    "correct_answer",
-]
-
-
+# 1. check_file_exists
+# Ne Yapar? Belirtilen dosya yolunda dosyanın gerçekten var olup olmadığını kontrol eder; dosya bulunamazsa hata (FileNotFoundError) fırlatır.
 def check_file_exists(path: Path) -> None:
-    """Check whether a dataset file exists."""
-
     if not path.exists():
-        raise FileNotFoundError(
-            f'missing file: {path}. run create_demo_dataset.py first'
-        )
+        raise FileNotFoundError(f"Missing file: {path}")
 
 
+
+# 2. check_required_columns
+# Ne Yapar? Tabloda olması zorunlu olan sütunların (kolonların) eksiksiz yer alıp almadığına bakar; eksik sütun varsa hata verir.
 def check_required_columns(
     dataframe: pd.DataFrame,
     required_columns: list[str],
-    dataset_name: str
+    dataset_name: str,
 ) -> None:
-    """Check whether all required columns exist."""
-
     missing_columns = [
         column for column in required_columns if column not in dataframe.columns
     ]
 
     if missing_columns:
         raise ValueError(
-            f'{dataset_name} is missing required column: {missing_columns}'
+            f"{dataset_name} is missing columns: {missing_columns}"
         )
-    
+
+
+
+# 3. check_missing_values
+# Ne Yapar? Veri setinde boş bırakılmış (NaN/None) hücreler olup olmadığını denetler; eksik veri bulursa hangi sütunda kaç tane olduğunu rapor ederek hata fırlatır.
 def check_missing_values(dataframe: pd.DataFrame, dataset_name: str) -> None:
-    """Check whether the dataset contains missing values."""
     missing_counts = dataframe.isna().sum()
     missing_counts = missing_counts[missing_counts > 0]
 
     if not missing_counts.empty:
         raise ValueError(
-            f'{dataset_name} contains missing values: \n{missing_counts}'
+            f"{dataset_name} has missing values:\n{missing_counts}"
         )
-    
 
+
+# 4. check_correctness_column
+# Ne Yapar? is_correct (doğru mu) sütununun mantığını denetler; öğrencinin cevabı ile doğru cevap uyuştuğunda bu değerin 1, uyuşmadığında 0 olduğunu teyit eder.
 def check_correctness_column(interactions_df: pd.DataFrame) -> None:
-    """Check whether is_correct was calculated correctly."""
     expected_is_correct = (
-        interactions_df['user_answer'] == interactions_df['correct_answer']
+        interactions_df["user_answer"] == interactions_df["correct_answer"]
     ).astype(int)
 
-    mismatches = interactions_df[
-        interactions_df['is_correct'] != expected_is_correct
-    ]
-
-    if not mismatches.empty:
-        raise ValueError(
-            f'is correct has {len(mismatches)} incorrect rows'
-        )
-    
-def check_timestamp_order(interactions_df: pd.DataFrame) -> None:
-    """Check whether each student's interactions are sorted by timestamp."""
-    
-    interactions_df = interactions_df.copy()
-    interactions_df['timestamp'] = pd.to_datetime(interactions_df['timestamp'])
-
-    sorted_df = interactions_df.sort_values(
-        by=['student_id', 'timestamp']
-    ).reset_index(drop=True)
-
-    original_df = interactions_df.reset_index(drop=True)
-
-    if not original_df[['student_id', 'timestamp']].equals(
-        sorted_df[['student_id', 'timestamp']]
-    ):
-        raise ValueError(
-            'interactions are not sorted by student_id and timestamp'
-        )
+    if not (interactions_df["is_correct"] == expected_is_correct).all():
+        raise ValueError("is_correct column does not match answers.")
 
 
-def check_question_links(
+
+# 5. check_question_references
+# Ne Yapar? Etkileşimler tablosundaki tüm soru ID'lerinin, ana soru havuzunda (questions_df) mevcut olup olmadığını kontrol eder (yabancı anahtar/foreign key kontrolü).
+def check_question_references(
+    questions_df: pd.DataFrame,
     interactions_df: pd.DataFrame,
-    question_df: pd.DataFrame
 ) -> None:
-    """Check whether every interaction question exists in question metadata."""
+    question_ids = set(questions_df["question_id"])
+    interaction_question_ids = set(interactions_df["question_id"])
 
-    interaction_question_ids = set(interactions_df['question_id'].unique())
-    metadata_question_ids = set(question_df['question_id'].unique())
-
-    missing_question_ids = interaction_question_ids - metadata_question_ids
+    missing_question_ids = interaction_question_ids - question_ids
 
     if missing_question_ids:
         raise ValueError(
-            f"Some interaction question IDs are missing from metadata: "
-            f"{sorted(missing_question_ids)[:10]}"
+            f"Interactions contain unknown question_ids: {missing_question_ids}"
         )
 
 
-def print_summary(
-    interactions_df: pd.DataFrame,
-    questions_df: pd.DataFrame,
-) -> None:
-    """Print a short dataset summary."""
+
+# 6. check_timestamp_order
+# Ne Yapar? Her öğrencinin çözdüğü soruların zaman damgalarını (timestamp) kronolojik olarak inceler; zaman sırasının geçmişten geleceğe doğru düzenli akıp akmadığına bakar.
+def check_timestamp_order(interactions_df: pd.DataFrame) -> None:
+    interactions_df = interactions_df.copy()
+    interactions_df["timestamp"] = pd.to_datetime(interactions_df["timestamp"])
+
+    for student_id, student_df in interactions_df.groupby("student_id"):
+        if not student_df["timestamp"].is_monotonic_increasing:
+            raise ValueError(
+                f"Timestamps are not sorted for student: {student_id}"
+            )
+
+
+
+# 7. main
+# Ne Yapar? Tüm bu kontrol fonksiyonlarını sırasıyla çalıştıran ana motor görevi görür. Veriler tüm testlerden başarıyla geçerse ekrana onay mesajı ve temel istatistikleri yazdırır.
+def main() -> None:
+    check_file_exists(QUESTIONS_PATH)
+    check_file_exists(INTERACTIONS_PATH)
+
+    questions_df = pd.read_csv(QUESTIONS_PATH)
+    interactions_df = pd.read_csv(INTERACTIONS_PATH)
+
+    check_required_columns(
+        questions_df,
+        REQUIRED_QUESTION_COLUMNS,
+        "questions_df",
+    )
+
+    check_required_columns(
+        interactions_df,
+        REQUIRED_INTERACTION_COLUMNS,
+        "interactions_df",
+    )
+
+    check_missing_values(questions_df, "questions_df")
+    check_missing_values(interactions_df, "interactions_df")
+
+    check_correctness_column(interactions_df)
+    check_question_references(questions_df, interactions_df)
+    check_timestamp_order(interactions_df)
 
     print("Demo dataset validation passed.")
-    print(f"Number of students: {interactions_df['student_id'].nunique()}")
-    print(f"Number of questions in metadata: {len(questions_df)}")
-    print(f"Number of used questions: {interactions_df['question_id'].nunique()}")
-    print(f"Number of interactions: {len(interactions_df)}")
+    print(f"Questions: {len(questions_df)}")
+    print(f"Interactions: {len(interactions_df)}")
+    print(f"Students: {interactions_df['student_id'].nunique()}")
     print(f"Average correctness: {interactions_df['is_correct'].mean():.3f}")
     print(f"Average elapsed time: {interactions_df['elapsed_time'].mean():.1f} ms")
 
 
-def main() -> None:
-    """Run all validation checks."""
-
-    check_file_exists(INTERACTIONS_PATH)
-    check_file_exists(QUESTIONS_PATH)
-
-    interactions_df = pd.read_csv(INTERACTIONS_PATH)
-    questions_df = pd.read_csv(QUESTIONS_PATH)
-
-    check_required_columns(
-        dataframe=interactions_df,
-        required_columns=REQUIRED_INTERACTION_COLUMNS,
-        dataset_name="demo_interactions.csv",
-    )
-
-    check_required_columns(
-        dataframe=questions_df,
-        required_columns=REQUIRED_QUESTION_COLUMNS,
-        dataset_name="demo_questions.csv",
-    )
-
-    check_missing_values(interactions_df, "demo_interactions.csv")
-    check_missing_values(questions_df, "demo_questions.csv")
-    check_correctness_column(interactions_df)
-    check_timestamp_order(interactions_df)
-    check_question_links(interactions_df, questions_df)
-
-    print_summary(interactions_df, questions_df)
-
-
 if __name__ == "__main__":
     main()
-
-
-# # ------------------------------------------------------------
-# # NOTES
-# # ------------------------------------------------------------
-
-# # This file validates the demo dataset created by create_demo_dataset.py.
-# # It checks whether the generated CSV files are usable before modeling.
-
-# # Main checks:
-# # - Required files exist
-# # - Required columns exist
-# # - No missing values
-# # - is_correct is calculated correctly
-# # - Student histories are sorted by timestamp
-# # - Every interaction question_id exists in question metadata
-
-# # Why this matters:
-# # Bad data creates bad models.
-# # Before feature engineering or model training, we need to make sure the dataset is clean.
-
-# # Important project idea:
-# # This validation step protects the research pipeline.
-# # If the data is wrong, later results cannot be trusted.
-
-# # In professional ML projects:
-# # Data validation is not optional.
-# # It is one of the first serious steps before training models.
