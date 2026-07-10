@@ -2,9 +2,8 @@
 Simple RL tutor environment for the Adaptive AI Tutor Research Lab.
 
 Goal:
-Create a small simulation environment where an AI tutor chooses the next question difficulty.
-
-This is the first reinforcement learning foundation of the project.
+Create a small simulation where the tutor chooses question difficulty
+and receives reward based on student performance.
 """
 
 from pathlib import Path
@@ -13,8 +12,10 @@ import numpy as np
 import pandas as pd
 
 
-INPUT_PATH = Path("02_data/processed/demo_features.csv")
-OUTPUT_DIR = Path("06_results/tables")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+INPUT_PATH = PROJECT_ROOT / "02_data" / "processed" / "demo_features.csv"
+OUTPUT_DIR = PROJECT_ROOT / "06_results" / "tables"
 OUTPUT_PATH = OUTPUT_DIR / "rl_random_policy_results.csv"
 
 RANDOM_SEED = 17
@@ -24,19 +25,16 @@ ACTIONS = ["easy", "medium", "hard"]
 
 
 class TutorEnvironment:
-    """A simple tutoring environment for RL experiments."""
-
     def __init__(self, data: pd.DataFrame, random_seed: int = RANDOM_SEED):
         self.data = data
         self.rng = np.random.default_rng(random_seed)
         self.question_bank = self._build_question_bank()
+
         self.student_profile = None
         self.recent_results = []
         self.current_step = 0
 
     def _build_question_bank(self) -> pd.DataFrame:
-        """Create unique question bank."""
-
         return (
             self.data.groupby("question_id")
             .agg(
@@ -48,13 +46,15 @@ class TutorEnvironment:
         )
 
     def reset(self) -> dict:
-        """Start a new student episode."""
-
         student_id = self.rng.choice(self.data["student_id"].unique())
         student_df = self.data[self.data["student_id"] == student_id]
 
         weak_topic = student_df.groupby("tags")["is_correct"].mean().idxmin()
-        recent_accuracy = student_df.sort_values("timestamp").tail(5)["is_correct"].mean()
+        recent_accuracy = (
+            student_df.sort_values("timestamp")
+            .tail(5)["is_correct"]
+            .mean()
+        )
 
         self.student_profile = {
             "student_id": student_id,
@@ -68,8 +68,6 @@ class TutorEnvironment:
         return self._get_state()
 
     def _get_state(self) -> dict:
-        """Return current environment state."""
-
         if self.recent_results:
             recent_accuracy = float(np.mean(self.recent_results))
         else:
@@ -83,9 +81,9 @@ class TutorEnvironment:
         }
 
     def _sample_question(self, difficulty: str) -> pd.Series:
-        """Sample a question with selected difficulty."""
-
-        candidates = self.question_bank[self.question_bank["difficulty"] == difficulty]
+        candidates = self.question_bank[
+            self.question_bank["difficulty"] == difficulty
+        ]
 
         if candidates.empty:
             candidates = self.question_bank
@@ -96,10 +94,8 @@ class TutorEnvironment:
         ).iloc[0]
 
     def step(self, action: str) -> tuple[dict, float, bool, dict]:
-        """Take one tutor action."""
-
         if action not in ACTIONS:
-            raise ValueError(f"Invalid action: {action}. Choose from {ACTIONS}.")
+            raise ValueError(f"Invalid action: {action}")
 
         question = self._sample_question(action)
 
@@ -144,7 +140,9 @@ def load_features(path: Path) -> pd.DataFrame:
     """Load feature dataset."""
 
     if not path.exists():
-        raise FileNotFoundError(f"Missing file: {path}. Run build_features.py first.")
+        raise FileNotFoundError(
+            f"Missing file: {path}. Run build_features.py first."
+        )
 
     dataframe = pd.read_csv(path)
     dataframe["timestamp"] = pd.to_datetime(dataframe["timestamp"])
@@ -152,18 +150,21 @@ def load_features(path: Path) -> pd.DataFrame:
     return dataframe
 
 
-def run_random_policy(environment: TutorEnvironment, episodes: int = 20) -> pd.DataFrame:
-    """Run a random policy as the first RL baseline."""
+def run_random_policy(
+    environment: TutorEnvironment,
+    episodes: int = 20,
+) -> pd.DataFrame:
+    """Run random policy as the first RL baseline."""
 
     rows = []
 
     for episode in range(1, episodes + 1):
         state = environment.reset()
         done = False
-        total_reward = 0
+        total_reward = 0.0
 
         while not done:
-            action = environment.rng.choice(ACTIONS)
+            action = str(environment.rng.choice(ACTIONS))
             next_state, reward, done, info = environment.step(action)
 
             total_reward += reward
@@ -190,7 +191,7 @@ def run_random_policy(environment: TutorEnvironment, episodes: int = 20) -> pd.D
 
 
 def main() -> None:
-    """Run the first RL environment test."""
+    """Run random policy test."""
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -208,24 +209,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# NOTES
-# This file creates the first simple RL tutoring environment.
-#
-# Agent:
-# The AI tutor.
-#
-# State:
-# Student recent accuracy, weak topic, and current step.
-#
-# Action:
-# Choose question difficulty: easy, medium, or hard.
-#
-# Reward:
-# Positive reward for correct answer.
-# Small bonus for targeting weak topic.
-# Small penalty for questions that are too easy or too hard.
-#
-# This is not the final RL system.
-# It is the first working environment for testing RL logic.
