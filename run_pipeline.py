@@ -26,8 +26,6 @@ SCRIPTS = [
 
 
 def run_script(script_path: str) -> None:
-    """Run one Python script."""
-
     print("\n" + "=" * 70)
     print(f"Running: {script_path}")
     print("=" * 70)
@@ -52,12 +50,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# NOTES
-# This file runs the whole project from start to finish.
-#
-# Instead of running every script manually, we can run:
-# python run_pipeline.py
-#
-# This is useful for GitHub reviewers because they can test the project easily.
