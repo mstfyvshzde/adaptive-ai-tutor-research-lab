@@ -11,26 +11,25 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-Q_LEARNING_PATH = Path("06_results/tables/q_learning_results.csv")
-POLICY_COMPARISON_PATH = Path("06_results/tables/rl_policy_comparison.csv")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-OUTPUT_DIR = Path("06_results/figures/rl")
+Q_LEARNING_PATH = PROJECT_ROOT / "06_results" / "tables" / "q_learning_results.csv"
+POLICY_COMPARISON_PATH = PROJECT_ROOT / "06_results" / "tables" / "rl_policy_comparison.csv"
+
+OUTPUT_DIR = PROJECT_ROOT / "06_results" / "figures" / "rl"
 Q_LEARNING_REWARD_PLOT = OUTPUT_DIR / "q_learning_reward_curve.png"
 POLICY_COMPARISON_PLOT = OUTPUT_DIR / "rl_policy_comparison.png"
 
 
 def load_csv(path: Path) -> pd.DataFrame:
-    """Load a CSV file."""
-
     if not path.exists():
         raise FileNotFoundError(f"Missing file: {path}")
 
     return pd.read_csv(path)
 
 
+# plot_q_learning_reward_curve: Q-Learning ajanının zaman içindeki öğrenme eğrisini (çizgi grafiğini) çizer. Her eğitim turundaki (episode) toplam ödülü silik, son 10 turun hareketli ortalamasını (rolling_reward) ise kalın bir çizgiyle gösterir; böylece yapay zekanın turlar ilerledikçe akıllanıp akıllanmadığı (çizginin yukarı gidip gitmediği) net bir şekilde anlaşılır.
 def plot_q_learning_reward_curve(q_learning_df: pd.DataFrame) -> None:
-    """Plot total reward per episode for Q-learning."""
-
     episode_summary = (
         q_learning_df.groupby("episode")
         .agg(total_reward=("reward", "sum"))
@@ -66,9 +65,8 @@ def plot_q_learning_reward_curve(q_learning_df: pd.DataFrame) -> None:
     plt.close()
 
 
+# plot_policy_comparison: İki yöntemin (Rastgele vs. Q-Learning) performansını kıyaslayan bir sütun (bar) grafiği oluşturur. Yan yana iki dik sütun basarak hangi politikanın adım başına daha yüksek ortalama ödül getirdiğini anında gösterir.
 def plot_policy_comparison(policy_df: pd.DataFrame) -> None:
-    """Plot average reward by policy."""
-
     plt.figure(figsize=(7, 5))
     plt.bar(policy_df["policy"], policy_df["average_reward"])
 
@@ -80,9 +78,8 @@ def plot_policy_comparison(policy_df: pd.DataFrame) -> None:
     plt.close()
 
 
+# main: Grafikleri kaydetmek için bilgisayarda bir klasör (figures/rl) oluşturur, .csv sonuç dosyalarını içeri aktarır, yukarıdaki iki görselleştirme fonksiyonunu tetikleyip grafikleri .png formatında resim olarak kaydeder
 def main() -> None:
-    """Create RL result plots."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     q_learning_df = load_csv(Q_LEARNING_PATH)
@@ -98,16 +95,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# NOTES
-# This file creates plots for the RL part of the project.
-#
-# q_learning_reward_curve.png:
-# Shows whether reward improves across training episodes.
-#
-# rl_policy_comparison.png:
-# Compares random policy and Q-learning by average reward.
-#
-# Why this matters:
-# Research projects need visual results, not only code.
