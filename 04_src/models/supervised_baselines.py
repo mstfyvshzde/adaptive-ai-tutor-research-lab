@@ -69,6 +69,9 @@ CATEGORICAL_FEATURES = [
 TARGET_COLUMN = "is_correct"
 
 
+
+# 1. load_features
+# Ne Yapar? Bir önceki aşamada ürettiğin özellik veri setini (demo_features.csv) yükler ve tarih sütununu formatlar.
 def load_features(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(
@@ -81,6 +84,10 @@ def load_features(path: Path) -> pd.DataFrame:
     return dataframe
 
 
+
+# 2. create_time_based_split
+# Ne Yapar? Veriyi eğitim (train) ve test seti olarak ikiye böler ancak bunu zamana göre (time-based) yapar.
+# Detay: Rastgele bir bölünme yerine, verileri kronolojik sıraya dizer. İlk %80'lik kısmı (geçmişi) modelleri eğitmek için, son %20'lik kısmı (geleceği) ise modelleri test etmek için ayırır. Böylece gerçek bir simülasyon yapılmış olur.
 def create_time_based_split(
     dataframe: pd.DataFrame
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
@@ -121,11 +128,9 @@ def build_preprocessor() -> ColumnTransformer:
 
     return preprocessor
 
-
-
 def build_models() -> dict[str, object]:
     return {
-        'dumpy_majority': DummyClassifier(strategy='most_frequent'),
+        "dummy_majority": DummyClassifier(strategy="most_frequent"),
         # Nedir? Hiçbir kalıp öğrenmeyen, sadece veri setindeki en çok tekrarlayan sonuca (örneğin herkes soruyu doğru bildiyse herkese "doğru" cevabı verir) göre körü körüne tahmin yapan en temel modeldir.
         # Amacı: Diğer gelişmiş modellerin başarısını ölçmek için bir taban çizgisi (baseline) oluşturur; gerçek modellerin en azından bundan daha iyi performans göstermesi beklenir.
 
@@ -149,7 +154,6 @@ def build_models() -> dict[str, object]:
     }
 
 
-
 # ROC AUC, bir sınıflandırma modelinin (örneğin, bir öğrencinin soruyu doğru mu yoksa yanlış mı bileceğini tahmin eden sistemin) iki sınıfı birbirinden ayırt etme gücünü ölçen en popüler başarı metriğidir.
 # Bu fonksiyon, modelin tahmin başarısını ölçen ROC AUC skorunu kodun çökmesini engelleyerek güvenli bir şekilde hesaplar. Eğer test verisinde hem 0 hem 1 sınıfı (yani hem doğru hem yanlış cevap) yoksa fonksiyon hata fırlatmak yerine güvenli bir şekilde NaN (belirsiz) değerini döndürür; aksi takdirde normal başarı skorunu hesaplar.
 def safe_roc_auc(y_true: pd.Series, y_probability: np.ndarray) -> float:
@@ -170,6 +174,11 @@ def safe_log_loss(y_true: pd.Series, y_probability: np.ndarray) -> float:
 
 
 
+
+
+# 3. evaluate_model
+# Ne Yapar? Tek bir modeli alır, eğitir, tahmin yaptırır ve tüm başarı metriklerini hesaplar.
+# Detay: İçerisinde bir Pipeline kurarak önce build_preprocessor ile veriyi temizler, ardından modeli bu verilerle eğitir (fit). Test verisi üzerinde tahminler (predict ve predict_proba) üreterek; Accuracy, Precision, Recall, F1-Score, ROC AUC ve Log Loss gibi tüm kritik başarı metriklerini tek bir sözlük (dict) halinde raporlar.
 def evaluate_model(
     model_name: str,
     model: object,
@@ -189,59 +198,63 @@ def evaluate_model(
 
     y_pred = pipeline.predict(X_test)
 
-    bak
+    if hasattr(pipeline, 'predict_proba'):
+        y_probability = pipeline.predict_proba(X_test)[:, 1]
+    else:
+        y_probability = y_pred
 
-#     if hasattr(pipeline, "predict_proba"):
-#         y_probability = pipeline.predict_proba(x_test)[:, 1]
-#     else:
-#         y_probability = y_pred
+    return {
+        'model': model_name,
+        'accuracy': accuracy_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred, zero_division=0),
+        'recall': recall_score(y_test, y_pred, zero_division=0),
+        'f1': f1_score(y_test, y_pred, zero_division=0),
+        "roc_auc": safe_roc_auc(y_test, y_probability),
+        'log_loss': safe_log_loss(y_test, y_probability)
 
-#     return {
-#         "model": model_name,
-#         "accuracy": accuracy_score(y_test, y_pred),
-#         "precision": precision_score(y_test, y_pred, zero_division=0),
-#         "recall": recall_score(y_test, y_pred, zero_division=0),
-#         "f1": f1_score(y_test, y_pred, zero_division=0),
-#         "roc_auc": safe_roc_auc(y_test, y_probability),
-#         "log_loss": safe_log_loss(y_test, y_probability),
-#     }
-
-
-# def main() -> None:
-#     """Train and evaluate all supervised baselines."""
-
-#     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-#     dataframe = load_features(INPUT_PATH)
-
-#     x_train, x_test, y_train, y_test = create_time_based_split(dataframe)
-
-#     models = build_models()
-
-#     result_rows = []
-
-#     for model_name, model in models.items():
-#         print(f"Training model: {model_name}")
-
-#         result = evaluate_model(
-#             model_name=model_name,
-#             model=model,
-#             x_train=x_train,
-#             x_test=x_test,
-#             y_train=y_train,
-#             y_test=y_test,
-#         )
-
-#         result_rows.append(result)
-
-#     results_df = pd.DataFrame(result_rows).round(4)
-#     results_df.to_csv(OUTPUT_PATH, index=False)
-
-#     print("Supervised baselines completed successfully.")
-#     print(f"Saved to: {OUTPUT_PATH}")
-#     print("\nResults:")
-#     print(results_df)
+    }
 
 
-# if __name__ == "__main__":
-#     main()
+
+
+# 4. main
+# Ne Yapar? Tüm bu makine öğrenmesi sürecini baştan sona yürüten ana motordur.
+# Detay: Klasörleri hazırlar, veriyi yükler, zamana göre böler; ardından build_models içindeki 4 modeli sırayla evaluate_model fonksiyonuna göndererek yarıştırır. En sonunda tüm sonuçları bir performans tablosu haline getirip supervised_baseline_metrics.csv adıyla bilgisayara kaydeder.
+def main() -> None:
+    """Train and evaluate all supervised baselines."""
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    dataframe = load_features(INPUT_PATH)
+
+    X_train, X_test, y_train, y_test = create_time_based_split(dataframe)
+
+    models = build_models()
+
+    result_rows = []
+
+    for model_name, model in models.items():
+        print(f"Training model: {model_name}")
+
+        result = evaluate_model(
+            model_name=model_name,
+            model=model,
+            X_train=X_train,
+            X_test=X_test,
+            y_train=y_train,
+            y_test=y_test,
+        )
+
+        result_rows.append(result)
+
+    results_df = pd.DataFrame(result_rows).round(4)
+    results_df.to_csv(OUTPUT_PATH, index=False)
+
+    print("Supervised baselines completed successfully.")
+    print(f"Saved to: {OUTPUT_PATH}")
+    print("\nResults:")
+    print(results_df)
+
+
+if __name__ == "__main__":
+    main()
