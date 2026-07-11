@@ -1,0 +1,38 @@
+dataset:
+  name: ednet
+  version: controlled_subset
+  target_students: 10000
+  target_interactions: 500000
+  min_interactions_per_student: 20
+  max_interactions_per_student: 150
+  random_seed: 17
+
+task:
+  type: correctness_prediction
+  target_column: is_correct
+
+processing:
+  use_question_answer_interactions_only: true
+  exclude_non_question_events: true
+  sort_by_student_and_time: true
+  save_processed_subset: true
+
+output_paths:
+  processed_data: 02_data/processed/ednet/ednet_features.csv
+  metrics: 06_results/tables/ednet/ednet_supervised_metrics.csv
+  comparison: 06_results/tables/ednet/v1_v2_comparison.csv
+
+models:
+  - dummy_majority
+  - logistic_regression
+  - random_forest
+  - gradient_boosting
+
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - roc_auc
+    - log_loss
