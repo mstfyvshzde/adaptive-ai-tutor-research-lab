@@ -1,0 +1,62 @@
+project:
+  name: adaptive-ai-tutor-research-lab
+  version: prototype-v1
+  description: Research-style adaptive AI tutor prototype.
+
+data:
+  type: synthetic
+  num_students: 40
+  num_questions: 80
+  random_seed: 17
+
+features:
+  include_student_history: true
+  include_rolling_accuracy: true
+  include_topic_history: true
+  include_question_history: true
+  include_elapsed_time: true
+  include_difficulty: true
+
+supervised_models:
+  - dummy_majority
+  - logistic_regression
+  - random_forest
+  - gradient_boosting
+
+clustering:
+  algorithm: kmeans
+  num_clusters: 4
+  metric: silhouette_score
+
+recommendation:
+  strategies:
+    - random
+    - difficulty_based
+    - weak_topic
+
+reinforcement_learning:
+  algorithm: q_learning
+  actions:
+    - easy
+    - medium
+    - hard
+  episodes: 100
+  alpha: 0.1
+  gamma: 0.9
+  epsilon: 0.2
+
+evaluation:
+  supervised_metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - roc_auc
+    - log_loss
+  rl_metrics:
+    - average_reward
+    - average_correctness
+    - policy_comparison
+
+demo:
+  framework: streamlit

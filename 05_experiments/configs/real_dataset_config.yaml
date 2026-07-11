@@ -1,0 +1,55 @@
+project:
+  name: adaptive-ai-tutor-research-lab
+  phase: real-dataset-upgrade
+  status: planned
+
+dataset:
+  candidate_names:
+    - ASSISTments
+    - EdNet
+    - KDD Cup educational datasets
+  current_choice: undecided
+  source_type: external
+  include_raw_data_in_repo: false
+
+target_schema:
+  required_columns:
+    - student_id
+    - question_id
+    - is_correct
+  recommended_columns:
+    - timestamp
+    - tags
+    - difficulty
+    - elapsed_time
+
+preprocessing:
+  remove_missing_student_id: true
+  remove_missing_question_id: true
+  remove_missing_target: true
+  create_timestamp_if_missing: true
+  estimate_difficulty_if_missing: true
+  sample_subset_first: true
+
+subset_strategy:
+  enabled: true
+  max_students: 1000
+  max_interactions: 50000
+  reason: Start with a smaller subset for debugging and pipeline stability.
+
+evaluation:
+  compare_with_synthetic_results: true
+  supervised_metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - roc_auc
+    - log_loss
+  clustering_metrics:
+    - silhouette_score
+
+notes:
+  - Real dataset integration should start after the synthetic prototype is stable.
+  - Raw dataset files may be too large for GitHub.
+  - Dataset license and privacy rules should be checked before use.
