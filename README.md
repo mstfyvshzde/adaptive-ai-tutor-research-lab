@@ -1,128 +1,292 @@
 # Adaptive AI Tutor Research Lab
 
-A research-style AI project that simulates an adaptive tutoring system using:
+Adaptive AI Tutor Research Lab is a research-style AI/ML portfolio project that explores how an intelligent tutoring system can personalize learning using student modeling, supervised learning, clustering, recommendation strategies, and reinforcement learning.
 
-- knowledge tracing
-- student behavior clustering
-- recommendation baselines
-- reinforcement learning
-- evaluation and visualization
+The project builds a complete end-to-end pipeline:
 
-The goal is to study how an AI tutor can estimate a student's learning state and recommend better next learning activities over time.
+data generation → validation → feature engineering → supervised prediction → clustering → recommendation → reinforcement learning → evaluation → visualization → demo
 
-## Project Idea
+## Project Goal
 
-Traditional learning platforms often give the same content to every student.
+The main goal is to investigate how an AI tutor can use student interaction history to make better personalized learning decisions.
 
-This project explores a different approach:
+The tutor prototype is designed to answer questions such as:
 
-The tutor observes student performance, builds learning features, groups students into behavior profiles, recommends next questions, and tests reinforcement learning policies for adaptive decision-making.
+- Can we predict whether a student will answer correctly?
+- Can we group students by learning behavior?
+- Can we recommend better learning activities based on student weaknesses?
+- Can a reinforcement learning tutor perform better than a random policy?
 
-## Core Research Question
+## Why This Project Matters
 
-Can an adaptive AI tutor improve learning recommendations by combining student knowledge features, recommender systems, and reinforcement learning?
+Many educational platforms collect student interaction data, but the key challenge is turning that data into useful learning decisions.
+
+This project demonstrates how different AI/ML methods can be connected into one adaptive learning pipeline.
+
+It is not only a model-training notebook. It includes:
+
+- structured project architecture
+- reproducible pipeline
+- automated testing
+- supervised learning baselines
+- clustering analysis
+- recommendation logic
+- reinforcement learning simulation
+- visualizations
+- Streamlit demo
+- research-style documentation
+- ethics and limitations discussion
+
+## Current Version
+
+The current version uses synthetic student interaction data.
+
+Synthetic data is used to:
+
+- avoid privacy risks
+- make the project reproducible
+- test the full pipeline safely
+- create a clean research prototype before using real datasets
+
+Future versions can extend the project with real educational datasets such as ASSISTments or EdNet.
 
 ## Main Components
 
-1. Demo Dataset Creation  
-   Creates a synthetic student-learning dataset for testing the full pipeline.
+### 1. Synthetic Student Learning Data
 
-2. Feature Engineering  
-   Builds student history, topic performance, question difficulty, and rolling accuracy features.
+The project creates demo student interaction data with:
 
-3. Supervised Knowledge Tracing  
-   Trains baseline models to predict whether a student will answer correctly.
+- students
+- questions
+- topics
+- difficulty levels
+- elapsed time
+- correctness labels
 
-4. Student Clustering  
-   Groups students into learner profiles based on behavior.
+### 2. Feature Engineering
 
-5. Recommendation Baselines  
-   Recommends questions using random, difficulty-based, and weak-topic strategies.
+Raw interactions are transformed into learning features such as:
 
-6. Reinforcement Learning  
-   Simulates a tutoring environment and compares random policy with Q-learning.
+- student accuracy so far
+- previous correctness
+- rolling accuracy
+- topic-level accuracy
+- question-level accuracy
+- elapsed time
+- question difficulty
 
-7. Visualization and Demo  
-   Generates result plots and provides a Streamlit demo app.
+### 3. Supervised Knowledge Tracing
 
-## How to Run
+The supervised learning task predicts whether a student will answer a question correctly.
 
-Install dependencies:
+Models included:
 
-    pip install -r requirements.txt
+- Dummy Classifier
+- Logistic Regression
+- Random Forest
+- Gradient Boosting
 
-Run the full pipeline:
+Metrics:
 
-    python run_pipeline.py
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- ROC-AUC
+- Log Loss
 
-Run tests:
+### 4. Student Clustering
 
-    pytest
+Students are grouped based on learning behavior, including:
 
-Run the demo app:
+- total attempts
+- final accuracy
+- average elapsed time
+- topic diversity
+- recent accuracy
+- progress trend
 
-    streamlit run 07_demo/app.py
+### 5. Recommendation System
+
+The project includes simple recommendation strategies:
+
+- random recommendation
+- difficulty-based recommendation
+- weak-topic recommendation
+
+These strategies simulate how an AI tutor might select the next activity.
+
+### 6. Reinforcement Learning Tutor
+
+A simple Q-learning tutor is implemented.
+
+The tutor observes a student state, chooses an action, receives reward, and learns which question difficulty may work better.
+
+Actions:
+
+- easy question
+- medium question
+- hard question
+
+The Q-learning tutor is compared against a random policy.
+
+### 7. Evaluation and Visualization
+
+The project generates result tables and plots for:
+
+- supervised model comparison
+- student clustering
+- recommendation examples
+- reinforcement learning policy comparison
+
+### 8. Streamlit Demo
+
+The project includes a Streamlit dashboard that displays:
+
+- dataset overview
+- supervised model results
+- clustering results
+- recommendation examples
+- reinforcement learning comparison
 
 ## Project Structure
 
-    00_project_charter/
-    01_research/
-    02_data/
-    03_notebooks/
-    04_src/
-    05_experiments/
-    06_results/
-    07_demo/
-    08_report/
-    09_portfolio_assets/
-    10_docs/
-    tests/
+```bash
+adaptive-ai-tutor-research-lab/
+├── 00_project_charter/
+├── 01_research/
+├── 02_data/
+├── 03_notebooks/
+├── 04_src/
+│   ├── data/
+│   ├── features/
+│   ├── models/
+│   ├── rl/
+│   ├── evaluation/
+│   └── visualization/
+├── 05_experiments/
+├── 06_results/
+├── 07_demo/
+├── 08_report/
+├── 09_portfolio_assets/
+├── 10_docs/
+├── tests/
+├── run_pipeline.py
+├── requirements.txt
+└── README.md
+```
 
-## Current Status
+## How to Run the Project
 
-The first complete demo pipeline is implemented.
+### 1. Create and activate virtual environment
 
-Current features include:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-- synthetic demo dataset
-- dataset validation
-- feature engineering
-- supervised baseline models
-- student clustering
-- simple recommendation baselines
-- RL tutor environment
-- Q-learning agent
-- policy comparison
-- result visualizations
-- Streamlit demo
-- smoke test for the full pipeline
+### 2. Install dependencies
 
-## Reproducibility
+```bash
+pip install -r requirements.txt
+```
 
-The project can be tested with one command:
+### 3. Run the full pipeline
 
-    python run_pipeline.py
+```bash
+python run_pipeline.py
+```
 
-This regenerates the demo data, model results, evaluation tables, and figures.
+### 4. Run tests
 
-For more details, see:
+```bash
+pytest
+```
 
-    10_docs/reproducibility_and_ethics.md
+### 5. Launch Streamlit demo
+
+```bash
+streamlit run 07_demo/app.py
+```
+
+## Expected Outputs
+
+The pipeline creates outputs such as:
+
+- processed feature dataset
+- supervised model metrics
+- student cluster summaries
+- recommendation examples
+- reinforcement learning results
+- comparison tables
+- visualization plots
+
+Example output folders:
+
+```bash
+06_results/tables/
+06_results/figures/
+07_demo/demo_data/
+```
+
+## Technologies Used
+
+- Python
+- pandas
+- NumPy
+- scikit-learn
+- matplotlib
+- Streamlit
+- pytest
+- Git / GitHub
 
 ## Limitations
 
-This version uses a synthetic demo dataset.
+Current limitations:
 
-The results are useful for testing the architecture and experiment pipeline, but they should not be interpreted as real-world educational impact yet.
+- dataset is synthetic
+- student behavior is simulated
+- reinforcement learning environment is simplified
+- recommendations are basic
+- no real classroom feedback is used
+- no long-term learning outcomes are measured
 
-Future work should evaluate the system on real student-learning datasets such as EdNet or ASSISTments.
+This project should be understood as a research prototype, not a production-ready educational platform.
 
-## AI-Assisted Development Note
+## Future Work
 
-AI tools were used for coding assistance, boilerplate generation, debugging support, and documentation drafting.
+Future improvements may include:
 
-The project design, experiment direction, result interpretation, and final research framing were reviewed and adapted by the author.
+- real educational datasets
+- deep knowledge tracing models
+- stronger recommender systems
+- more realistic reinforcement learning environments
+- fairness evaluation
+- explainable AI methods
+- improved interactive tutor demo
 
-## Author
+## Research and Ethics
 
-Shahzada Mustafayev
+The project includes documentation on reproducibility, privacy, limitations, and responsible use.
+
+AI tutoring systems should support students and teachers, not replace human judgment or make high-stakes educational decisions automatically.
+
+## Portfolio Summary
+
+This project demonstrates the ability to connect multiple AI/ML ideas into one complete system:
+
+- data engineering
+- feature engineering
+- supervised learning
+- unsupervised learning
+- recommender systems
+- reinforcement learning
+- evaluation
+- visualization
+- testing
+- documentation
+- demo deployment readiness
+
+## Status
+
+Current status: working research prototype with full pipeline, test coverage, result generation, and Streamlit demo.
