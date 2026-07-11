@@ -1,12 +1,10 @@
 """
-Q-Learning agent for the Adaptive AI Tutor Research Lab.
+Q-learning agent for the Adaptive AI Tutor Research Lab.
 
 Goal:
-Train a simple RL agent that learns which difficulty level to recommend:
-easy, medium, or hard.
-
-This script uses the TutorEnvironment from environment.py.
+Train a simple RL agent that learns which question difficulty to choose.
 """
+# Q-learning: Tutor’ın hangi durumda hangi seçimin daha iyi olduğunu deneye deneye öğrenmesi.
 
 from pathlib import Path
 
@@ -20,15 +18,22 @@ OUTPUT_DIR = Path("06_results/tables")
 OUTPUT_PATH = OUTPUT_DIR / "q_learning_results.csv"
 
 RANDOM_SEED = 17
+
 EPISODES = 100
+# EPISODES = 100 (Toplam Eğitim Turu): Yapay zekanın toplamda kaç kez sıfırdan başlayıp simülasyonu sonuna kadar (öğrenciyle 10 adım bitene kadar) oynayacağını belirler. Ajan, toplam 100 farklı öğrenci seansı üzerinden pratik yaparak deneyim kazanır.
+
 ALPHA = 0.1
+# ALPHA = 0.1 (Öğrenme Hızı - Learning Rate): Ajanın yeni yaşadığı deneyimlere ne kadar ağırlık vereceğini seçer. 0.1 değeri, ajanın eski bildiklerini %90 oranında koruyup, yeni bilgiyi %10 oranında hesaba katacağını gösterir. Yani ajan acele etmeden, sindire sindire öğrenir.
+
 GAMMA = 0.9
+# GAMMA = 0.9 (Gelecek Odaklılık - Discount Factor): Ajanın uzun vadeli ödülleri ne kadar önemsediğini gösterir. 0.9 yüksek bir değerdir; ajanın sadece o anki adımdan alacağı puana bakmayıp, gelecekteki adımlarda öğrenciye daha faydalı olmayı hedefleyen "ileri görüşlü" bir strateji izlemesini sağlar.
+
 EPSILON = 0.2
+# EPSILON = 0.2 (Keşif Oranı - Exploration Rate): Ajanın "yeni şeyler deneme" (keşif) ile "eski bildiği güvenli yoldan gitme" (sömürü) dengesidir. 0.2 değeri, ajanın %20 ihtimalle tamamen rastgele kararlar vererek yeni taktikler arayacağını, %80 ihtimalle ise hafızasındaki en iyi bildiği kararı uygulayacağını belirtir.
 
 
+# state_to_key: Öğrencinin karmaşık durum bilgilerini (başarı oranı ve adım sayısı) basitleştirerek "low_step_3", "high_step_5" gibi metin tabanlı benzersiz durum etiketlerine (state_key) dönüştürür. Bu, ajanın hafızasında yer tutmasını kolaylaştırır.
 def state_to_key(state: dict) -> str:
-    """Convert continuous state into a simple discrete state key."""
-
     recent_accuracy = state["recent_accuracy"]
 
     if recent_accuracy < 0.50:
@@ -41,13 +46,12 @@ def state_to_key(state: dict) -> str:
     return f"{accuracy_level}_step_{state['step']}"
 
 
+# choose_action: Ajanın karar mekanizmasıdır. Epsilon-Greedy yöntemiyle çalışır: %20 ihtimalle (EPSILON = 0.2) yeni şeyler denemek için rastgele bir zorluk seçer, %80 ihtimalle ise hafızasındaki tablodan (q_table) o durum için şimdiye kadar en yüksek puanı getirmiş en iyi kararı seçer.
 def choose_action(
     q_table: dict,
     state_key: str,
     rng: np.random.Generator,
 ) -> str:
-    """Choose action using epsilon-greedy strategy."""
-
     if rng.random() < EPSILON:
         return str(rng.choice(ACTIONS))
 
@@ -57,6 +61,7 @@ def choose_action(
     return max(q_table[state_key], key=q_table[state_key].get)
 
 
+# update_q_value: Ajanın hafıza tablosunu (q_table) güncelleyen öğrenme motorudur. Yapılan hamle sonrası alınan ödülü ve bir sonraki adımın potansiyel kazancını hesaba katarak, Bellman denklemi formülüyle (new_value=old_value+α×[reward+γ×max(Q)−old_value]) ilgili durum ve hamlenin kalıcılık puanını (Q değerini) günceller.
 def update_q_value(
     q_table: dict,
     state_key: str,
@@ -64,8 +69,6 @@ def update_q_value(
     reward: float,
     next_state_key: str,
 ) -> None:
-    """Update Q-value using the Q-learning formula."""
-
     if state_key not in q_table:
         q_table[state_key] = {action_name: 0.0 for action_name in ACTIONS}
 
@@ -82,9 +85,8 @@ def update_q_value(
     q_table[state_key][action] = new_value
 
 
+# train_q_learning_agent: Eğitimin döndüğü ana döngüdür. Belirlenen bölüm sayısı kadar (EPISODES = 100) öğrencileri sırayla sisteme alır; ajanın durumları gözlemlemesini, kararlar vermesini, ödüller toplamasını ve her adımda hafızasını eğitmesini sağlayarak tüm süreci bir veri tablosuna kaydeder.
 def train_q_learning_agent(environment: TutorEnvironment) -> pd.DataFrame:
-    """Train Q-learning agent in the tutor environment."""
-
     rng = np.random.default_rng(RANDOM_SEED)
     q_table = {}
     rows = []
@@ -132,9 +134,8 @@ def train_q_learning_agent(environment: TutorEnvironment) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# main: Simülasyonu tetikleyen, ortamı ve ajanı başlatan, eğitim bittikten sonra ajanın performans raporunu ekrana basıp tüm sonuçları bir .csv dosyası olarak bilgisayara kaydeden ana yönetim merkezidir.
 def main() -> None:
-    """Run Q-learning training."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     data = load_features(INPUT_PATH)
@@ -162,25 +163,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# NOTES
-# This file trains a simple Q-learning agent.
-#
-# State:
-# We convert recent_accuracy into low / medium / high.
-#
-# Action:
-# The agent chooses easy, medium, or hard.
-#
-# Reward:
-# Comes from the TutorEnvironment.
-#
-# Epsilon-greedy:
-# Sometimes the agent explores random actions.
-# Other times it chooses the best known action.
-#
-# Q-table:
-# Stores how valuable each action is for each state.
-#
-# This is the first learning-based RL policy.

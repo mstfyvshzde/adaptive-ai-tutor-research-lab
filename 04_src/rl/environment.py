@@ -23,7 +23,7 @@ MAX_STEPS = 10
 
 ACTIONS = ["easy", "medium", "hard"]
 
-
+# TutorEnvironment (Sınıf): Yapay zekanın içinde oynayacağı eğitim simülatörüdür (ortamıdır). Soru bankasını hazırlar, öğrencileri sisteme yükler ve yapay zekanın hamlelerine göre öğrencilerin doğru cevap verip vermeyeceğini simüle eder.
 class TutorEnvironment:
     def __init__(self, data: pd.DataFrame, random_seed: int = RANDOM_SEED):
         self.data = data
@@ -44,7 +44,8 @@ class TutorEnvironment:
             )
             .reset_index()
         )
-
+    
+    # reset: Yeni bir eğitim seansı (bölümü) başlatır. Rastgele bir öğrenci seçer, bu öğrencinin son başarı oranını ve en zayıf olduğu konuyu (weak_topic) belirleyerek sistemi başlangıç durumuna getirir.
     def reset(self) -> dict:
         student_id = self.rng.choice(self.data["student_id"].unique())
         student_df = self.data[self.data["student_id"] == student_id]
@@ -66,7 +67,7 @@ class TutorEnvironment:
         self.current_step = 0
 
         return self._get_state()
-
+    
     def _get_state(self) -> dict:
         if self.recent_results:
             recent_accuracy = float(np.mean(self.recent_results))
@@ -92,7 +93,9 @@ class TutorEnvironment:
             1,
             random_state=int(self.rng.integers(0, 1_000_000)),
         ).iloc[0]
+    
 
+    # step: Yapay zekanın seçtiği zorluk derecesine ("easy", "medium", "hard") göre havuzdan rastgele bir soru çeker. Öğrencinin güncel başarı durumu ile sorunun zorluğunu kıyaslayarak soruyu doğru bilip bilemeyeceğine dair bir olasılık hesabı yapar ve soruyu bilirse sisteme artı ödül (reward), bilemezse eksi/düşük ödül döndürür. Eğer soru öğrencinin zayıf olduğu konudansa fazladan ödül ekler; çok kolay veya çok zor kaldıysa ceza puanı keser.
     def step(self, action: str) -> tuple[dict, float, bool, dict]:
         if action not in ACTIONS:
             raise ValueError(f"Invalid action: {action}")
@@ -137,8 +140,6 @@ class TutorEnvironment:
 
 
 def load_features(path: Path) -> pd.DataFrame:
-    """Load feature dataset."""
-
     if not path.exists():
         raise FileNotFoundError(
             f"Missing file: {path}. Run build_features.py first."
@@ -150,12 +151,11 @@ def load_features(path: Path) -> pd.DataFrame:
     return dataframe
 
 
+# run_random_policy: Yazılan bu RL ortamını test etmek için çalışan ana döngüdür. Yapay zeka gibi davranarak tamamen rastgele zorluklar seçer (easy, medium veya hard), bunları ortama gönderir ve her adımdaki ödülleri, doğruluk durumlarını toplayarak bir tabloya kaydeder.
 def run_random_policy(
     environment: TutorEnvironment,
     episodes: int = 20,
 ) -> pd.DataFrame:
-    """Run random policy as the first RL baseline."""
-
     rows = []
 
     for episode in range(1, episodes + 1):
@@ -190,9 +190,8 @@ def run_random_policy(
     return pd.DataFrame(rows)
 
 
+# main: Tüm süreci başlatan ana motordur. Veriyi yükler, simülatörü (TutorEnvironment) kurar, rastgele politayı çalıştırır ve elde edilen başarı/ödül sonuçlarını en sonda bir .csv dosyası olarak bilgisayara kaydeder.
 def main() -> None:
-    """Run random policy test."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     data = load_features(INPUT_PATH)

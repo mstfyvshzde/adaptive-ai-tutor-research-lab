@@ -1,10 +1,14 @@
 """
-Create a small demo dataset for the Adaptive AI Tutor Research Lab.
+Create a synthetic demo dataset for the Adaptive AI Tutor Research Lab.
 
-This script creates synthetic student-question interaction data.
-The purpose is not to replace the real EdNet dataset.
+This script creates a small student-question interaction dataset.
 
-The purpose is to test the full project pipeline before working with large real data.
+Goal:
+Build a controllable demo dataset before using a real dataset.
+
+Outputs:
+07_demo/demo_data/demo_questions.csv
+07_demo/demo_data/demo_interactions.csv
 """
 
 from pathlib import Path
@@ -14,186 +18,208 @@ import numpy as np
 import pandas as pd
 
 
-RANDOM_SEED = 17
-NUM_STUDENTS = 40
-NUM_QUESTIONS = 80
-MIN_INTERACTIONS_PER_STUDENT = 25
-MAX_INTERACTIONS_PER_STUDENT = 45
+# PROJECT_ROOT: Projenin ana dizininin (kök klasörünün) bilgisayardaki konumunu otomatik olarak bulur ve saklar.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-OUTPUT_DIR = Path("07_demo/demo_data")
-INTERACTIONS_PATH = OUTPUT_DIR / "demo_interactions.csv"
+
+# OUTPUT_DIR: Üretilecek sahte verilerin kaydedileceği hedef klasörün (07_demo/demo_data) yolunu belirler.
+OUTPUT_DIR = PROJECT_ROOT / "07_demo" / "demo_data"
+
+# QUESTIONS_PATH: Oluşturulacak soru verilerinin kaydedileceği CSV dosyasının tam yolunu tutar.
 QUESTIONS_PATH = OUTPUT_DIR / "demo_questions.csv"
 
+# INTERACTIONS_PATH: Öğrenci-soru etkileşimlerinin (cevapların) kaydedileceği CSV dosyasının tam yolunu tutar.
+INTERACTIONS_PATH = OUTPUT_DIR / "demo_interactions.csv"
 
-def create_question_metadata(rng: np.random.Generator) -> pd.DataFrame:
-    """Create synthetic question metadata."""
+# RANDOM_SEED: Rastgele veri üretilirken her çalıştırmada aynı sonuçların (aynı sayıların ve seçimlerin) birebir tekrar elde edilmesini sağlayan kilittir.
+RANDOM_SEED = 17
 
-    topics = [
-        "algebra",
-        "geometry",
-        "probability",
-        "statistics",
-        "functions",
-        "logic",
-    ]
+# NUM_STUDENTS: Veri setinde toplam kaç adet sahte öğrenci tanımlanacağını (40) belirler.
+NUM_STUDENTS = 40
 
-    questions = []
+# NUM_QUESTIONS: Havuzda toplam kaç adet benzersiz soru oluşturulacağını (80) belirler.
+NUM_QUESTIONS = 80
+
+# MIN_INTERACTIONS_PER_STUDENT: Bir öğrencinin veri setinde minimum kaç soruya cevap vermiş olacağını (25) sınırlar.
+MIN_INTERACTIONS_PER_STUDENT = 25
+
+# MAX_INTERACTIONS_PER_STUDENT: Bir öğrencinin veri setinde maksimum kaç soruya cevap vermiş olacağını (45) sınırlar.
+MAX_INTERACTIONS_PER_STUDENT = 45
+
+# TOPICS: Soruların rastgele dağıtılacağı matematik konularının listesini içerir.
+TOPICS = [
+    "algebra",
+    "geometry",
+    "probability",
+    "statistics",
+    "functions",
+]
+
+# DIFFICULTIES: Soruların zorluk derecelerini ("easy", "medium", "hard") ve bunlara karşılık gelen zorluk katsayılarını/oranlarını eşleştirir.
+DIFFICULTIES = [
+    ("easy", 0.25),
+    ("medium", 0.50),
+    ("hard", 0.75),
+]
+
+# ANSWER_CHOICES: Soruların sahip olacağı çoktan seçmeli şık seçeneklerini (A, B, C, D) tanımlar.
+ANSWER_CHOICES = ["A", "B", "C", "D"]
+
+
+
+
+
+# 1. create_question_bank
+# Ne Yapar? Belirlediğin parametrelere göre (80 adet) sahte soru üretir.
+# Detay: Her soruya rastgele bir konu (topic), zorluk seviyesi (difficulty), bölüm (part) ve doğru cevap şıkkı (A, B, C, D) atayarak bunları bir tablo (DataFrame) haline getirir.
+def create_question_bank(rng: np.random.Generator) -> pd.DataFrame:
+    question_rows = []
 
     for question_id in range(1, NUM_QUESTIONS + 1):
-        topic = rng.choice(topics)
-        difficulty = rng.choice(["easy", "medium", "hard"], p=[0.35, 0.45, 0.20])
-        correct_answer = int(rng.integers(1, 5))
+        topic = str(rng.choice(TOPICS))
+        difficulty, difficulty_score = DIFFICULTIES[
+            int(rng.integers(0, len(DIFFICULTIES)))
+        ]
 
-        if difficulty == "easy":
-            difficulty_score = rng.uniform(0.15, 0.35)
-        elif difficulty == "medium":
-            difficulty_score = rng.uniform(0.36, 0.65)
-        else:
-            difficulty_score = rng.uniform(0.66, 0.90)
-
-        questions.append(
+        question_rows.append(
             {
                 "question_id": question_id,
-                "part": topic,
+                "part": int(rng.integers(1, 4)),
                 "tags": topic,
                 "difficulty": difficulty,
-                "difficulty_score": round(float(difficulty_score), 3),
-                "correct_answer": correct_answer,
+                "difficulty_score": difficulty_score,
+                "correct_answer": str(rng.choice(ANSWER_CHOICES)),
             }
         )
 
-    return pd.DataFrame(questions)
+    return pd.DataFrame(question_rows)
 
 
-def create_student_profiles(rng: np.random.Generator) -> dict:
-    """Create hidden student ability profiles."""
 
-    student_profiles = {}
-
-    for student_id in range(1, NUM_STUDENTS + 1):
-        base_ability = rng.uniform(0.35, 0.85)
-
-        topic_strengths = {
-            "algebra": rng.normal(base_ability, 0.12),
-            "geometry": rng.normal(base_ability, 0.12),
-            "probability": rng.normal(base_ability, 0.12),
-            "statistics": rng.normal(base_ability, 0.12),
-            "functions": rng.normal(base_ability, 0.12),
-            "logic": rng.normal(base_ability, 0.12),
-        }
-
-        topic_strengths = {
-            topic: float(np.clip(value, 0.05, 0.95))
-            for topic, value in topic_strengths.items()
-        }
-
-        student_profiles[student_id] = {
-            "base_ability": float(base_ability),
-            "topic_strengths": topic_strengths,
-        }
-
-    return student_profiles
-
-
-def simulate_answer(
+# 2. choose_wrong_answer
+# Ne Yapar? Öğrenci soruyu yanlış çözdüğünde, ona yanlış bir şık seçer.
+# Detay: Sorunun doğru cevabını listeden eler ve geriye kalan 3 yanlış şık arasından rastgele birini seçerek geri döndürür.
+def choose_wrong_answer(
+    correct_answer: str,
     rng: np.random.Generator,
-    topic_strength: float,
-    difficulty_score: float,
-    correct_answer: int,
-) -> int:
-    """Simulate the student's submitted answer."""
+) -> str:
+    wrong_choices = [
+        answer for answer in ANSWER_CHOICES if answer != correct_answer
+    ]
 
-    probability_correct = topic_strength - difficulty_score + 0.55
-    probability_correct = float(np.clip(probability_correct, 0.05, 0.95))
-
-    is_correct = int(rng.random() < probability_correct)
-
-    if is_correct:
-        return correct_answer
-
-    wrong_options = [option for option in [1, 2, 3, 4] if option != correct_answer]
-    return int(rng.choice(wrong_options))
+    return str(rng.choice(wrong_choices))
 
 
-def create_interactions(
-    rng: np.random.Generator,
+
+
+# 3. create_student_interactions
+# Ne Yapar? Öğrencilerin sorularla olan etkileşimlerini (test çözme simülasyonunu) yaratır.
+# Detay: Her öğrenciye rastgele bir yetenek skoru ve konu yatkınlığı verir. Öğrencinin soruyu doğru bilme ihtimalini Yetenek + Konu Yatkınlığı - Soru Zorluğu formülüyle hesaplar. Doğru veya yanlış bilmesine göre harcadığı süreyi (elapsed_time) ve verdiği cevabı belirleyip büyük bir etkileşim tablosu oluşturur.
+def create_student_interactions(
     questions_df: pd.DataFrame,
-    student_profiles: dict,
+    rng: np.random.Generator,
 ) -> pd.DataFrame:
-    """Create synthetic student-question interactions."""
+    interaction_rows = []
+    solving_id = 1
 
-    interactions = []
-    base_time = datetime(2026, 1, 1, 9, 0, 0)
+    start_time = datetime(2026, 1, 1, 9, 0, 0)
 
-    for student_id, profile in student_profiles.items():
-        num_interactions = rng.integers(
-            MIN_INTERACTIONS_PER_STUDENT,
-            MAX_INTERACTIONS_PER_STUDENT + 1,
+    for student_number in range(1, NUM_STUDENTS + 1):
+        student_id = f"student_{student_number:03d}"
+
+        student_ability = float(rng.normal(0.65, 0.12))
+        student_ability = float(np.clip(student_ability, 0.25, 0.95))
+
+        topic_adjustments = {
+            topic: float(rng.normal(0.0, 0.12)) for topic in TOPICS
+        }
+
+        number_of_interactions = int(
+            rng.integers(
+                MIN_INTERACTIONS_PER_STUDENT,
+                MAX_INTERACTIONS_PER_STUDENT + 1,
+            )
         )
 
-        current_time = base_time + timedelta(days=int(student_id))
+        current_time = start_time + timedelta(days=student_number)
 
-        for interaction_index in range(num_interactions):
+        for _ in range(number_of_interactions):
             question = questions_df.sample(
                 1,
                 random_state=int(rng.integers(0, 1_000_000)),
             ).iloc[0]
 
             topic = question["tags"]
-            topic_strength = profile["topic_strengths"][topic]
             difficulty_score = float(question["difficulty_score"])
-            correct_answer = int(question["correct_answer"])
 
-            user_answer = simulate_answer(
-                rng=rng,
-                topic_strength=topic_strength,
-                difficulty_score=difficulty_score,
-                correct_answer=correct_answer,
+            probability_correct = (
+                student_ability
+                + topic_adjustments[topic]
+                - difficulty_score
+                + 0.45
             )
 
-            if question["difficulty"] == "easy":
-                elapsed_time = rng.integers(12_000, 45_000)
-            elif question["difficulty"] == "medium":
-                elapsed_time = rng.integers(30_000, 90_000)
+            probability_correct = float(
+                np.clip(probability_correct, 0.05, 0.95)
+            )
+
+            is_correct = int(rng.random() < probability_correct)
+
+            correct_answer = question["correct_answer"]
+
+            if is_correct:
+                user_answer = correct_answer
             else:
-                elapsed_time = rng.integers(60_000, 150_000)
+                user_answer = choose_wrong_answer(correct_answer, rng)
 
-            current_time += timedelta(minutes=int(rng.integers(2, 20)))
+            elapsed_time = (
+                30_000
+                + difficulty_score * 60_000
+                + rng.normal(0, 8_000)
+            )
 
-            interactions.append(
+            if not is_correct:
+                elapsed_time += 15_000
+
+            elapsed_time = int(max(elapsed_time, 5_000))
+
+            current_time += timedelta(
+                minutes=int(rng.integers(5, 180))
+            )
+
+            interaction_rows.append(
                 {
                     "student_id": student_id,
                     "timestamp": current_time.isoformat(),
-                    "solving_id": f"{student_id}_{interaction_index + 1}",
+                    "solving_id": solving_id,
                     "question_id": int(question["question_id"]),
-                    "user_answer": int(user_answer),
+                    "user_answer": user_answer,
                     "correct_answer": correct_answer,
-                    "elapsed_time": int(elapsed_time),
-                    "part": question["part"],
-                    "tags": question["tags"],
+                    "elapsed_time": elapsed_time,
+                    "part": int(question["part"]),
+                    "tags": topic,
                     "difficulty": question["difficulty"],
-                    "difficulty_score": round(difficulty_score, 3),
-                    "is_correct": int(user_answer == correct_answer),
+                    "difficulty_score": difficulty_score,
+                    "is_correct": is_correct,
                 }
             )
 
-    return pd.DataFrame(interactions)
+            solving_id += 1
+
+    return pd.DataFrame(interaction_rows)
 
 
+
+# 4. main
+# Ne Yapar? Tüm sistemi başlatan ve yöneten orkestra şefidir.
+# Detay: Verilerin kaydedileceği klasörü oluşturur, rastgele sayı üreticiyi (rng) başlatır, yukarıdaki fonksiyonları sırayla çağırarak soruları ve etkileşimleri üretir, bunları CSV dosyası olarak bilgisayara kaydeder ve ekrana özet istatistikleri yazdırır
 def main() -> None:
-    """Create and save demo dataset."""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     rng = np.random.default_rng(RANDOM_SEED)
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    questions_df = create_question_metadata(rng)
-    student_profiles = create_student_profiles(rng)
-    interactions_df = create_interactions(rng, questions_df, student_profiles)
-
-    interactions_df = interactions_df.sort_values(
-        by=["student_id", "timestamp"]
-    ).reset_index(drop=True)
+    questions_df = create_question_bank(rng)
+    interactions_df = create_student_interactions(questions_df, rng)
 
     questions_df.to_csv(QUESTIONS_PATH, index=False)
     interactions_df.to_csv(INTERACTIONS_PATH, index=False)
@@ -202,89 +228,10 @@ def main() -> None:
     print(f"Questions saved to: {QUESTIONS_PATH}")
     print(f"Interactions saved to: {INTERACTIONS_PATH}")
     print(f"Number of students: {interactions_df['student_id'].nunique()}")
-    print(f"Number of questions: {interactions_df['question_id'].nunique()}")
+    print(f"Number of questions: {questions_df['question_id'].nunique()}")
     print(f"Number of interactions: {len(interactions_df)}")
     print(f"Average correctness: {interactions_df['is_correct'].mean():.3f}")
 
 
 if __name__ == "__main__":
     main()
-
-
-
-# ------------------------------------------------------------
-# NOTES
-# ------------------------------------------------------------
-
-# This file creates a small synthetic demo dataset.
-# It does NOT replace the real EdNet dataset.
-# Its purpose is to test the project pipeline before using large real data.
-
-# Why do we create demo data first?
-# - Real educational datasets can be very large.
-# - Before using real data, we need to check whether our code structure works.
-# - This demo dataset helps us test preprocessing, feature engineering, modeling, and demo app logic.
-
-# Main output files:
-# - 07_demo/demo_data/demo_questions.csv
-# - 07_demo/demo_data/demo_interactions.csv
-
-# demo_questions.csv contains question metadata:
-# - question_id: unique question number
-# - part: broad topic name
-# - tags: skill or topic label
-# - difficulty: easy, medium, or hard
-# - difficulty_score: numeric difficulty value
-# - correct_answer: correct answer option
-
-# demo_interactions.csv contains student-question interactions:
-# - student_id: unique learner number
-# - timestamp: when the student answered the question
-# - solving_id: unique interaction/session id
-# - question_id: question answered by the student
-# - user_answer: student's selected answer
-# - correct_answer: correct option
-# - elapsed_time: time spent on the question
-# - part/tags: topic information
-# - difficulty/difficulty_score: question difficulty
-# - is_correct: target variable for supervised learning
-
-# Function summary:
-
-# create_question_metadata()
-# Creates synthetic questions with topic, difficulty, difficulty score, and correct answer.
-
-# create_student_profiles()
-# Creates hidden student ability profiles.
-# Each student has a general ability and different strengths for each topic.
-
-# simulate_answer()
-# Simulates whether a student answers a question correctly.
-# The probability of correctness depends on:
-# - student topic strength
-# - question difficulty
-# - random variation
-
-# create_interactions()
-# Creates the full student-question history.
-# It simulates multiple question attempts for each student and stores them as rows.
-
-# main()
-# Runs the full script:
-# 1. Creates question metadata
-# 2. Creates student profiles
-# 3. Creates interaction data
-# 4. Sorts interactions by student and time
-# 5. Saves both CSV files
-
-# Important project idea:
-# This script is the first safe step before real dataset processing.
-# If this demo dataset works, we can later replace it with real EdNet-KT1 data.
-
-# Important ML idea:
-# The column "is_correct" will become the first supervised learning target.
-# Later, models will try to predict whether a student answers the next question correctly.
-
-# Important research idea:
-# This dataset lets us test the adaptive tutor pipeline:
-# student history -> knowledge tracing -> recommendation -> RL policy -> evaluation

@@ -1,15 +1,8 @@
 """
 Student behavior clustering for the Adaptive AI Tutor Research Lab.
 
-This script groups students based on their learning behavior.
-
 Goal:
-Find different learner profiles such as:
-
-- strong learners
-- struggling learners
-- slow but improving learners
-- inconsistent learners
+Group students based on their learning behavior.
 
 Input:
 02_data/processed/demo_features.csv
@@ -21,6 +14,7 @@ Outputs:
 """
 
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -30,16 +24,20 @@ from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
 
-INPUT_PATH = Path("02_data/processed/demo_features.csv")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-OUTPUT_TABLE_DIR = Path("06_results/tables")
-OUTPUT_FIGURE_DIR = Path("06_results/figures/clustering")
+INPUT_PATH = PROJECT_ROOT / "02_data" / "processed" / "demo_features.csv"
+
+OUTPUT_TABLE_DIR = PROJECT_ROOT / "06_results" / "tables"
+OUTPUT_FIGURE_DIR = PROJECT_ROOT / "06_results" / "figures" / "clustering"
 
 STUDENT_CLUSTERS_PATH = OUTPUT_TABLE_DIR / "student_clusters.csv"
 CLUSTER_SUMMARY_PATH = OUTPUT_TABLE_DIR / "cluster_summary.csv"
 CLUSTER_PLOT_PATH = OUTPUT_FIGURE_DIR / "student_clusters_pca.png"
 
 RANDOM_SEED = 17
+
+# N_CLUSTERS = 4, K-Means gibi kümeleme (clustering) algoritmalarında, verilerin toplam kaç farklı gruba/kümeye ayrılacağını belirler.
 N_CLUSTERS = 4
 
 
@@ -54,57 +52,60 @@ STUDENT_FEATURE_COLUMNS = [
 ]
 
 
-def load_features(path: Path) -> pd.DataFrame:
-    """Load feature dataset."""
 
+def load_features(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(
-            f"missing feature file: {path}. Run build_features.py first."
+            f"missing feature file: {path}. run build_features.py first."
         )
     
     dataframe = pd.read_csv(path)
     dataframe['timestamp'] = pd.to_datetime(dataframe['timestamp'])
+    # Kod içindeki pd.to_datetime(dataframe['timestamp']) satırı ise, bu tarih bilgisini düz bir metin (yazı) olmaktan çıkarıp bilgisayarın kronolojik sıralama ve zaman analizi yapabileceği gerçek bir tarih/saat formatına dönüştürür.
+    # Bu sayede sistem, öğrencilerin geçmişten geleceğe doğru hangi sırayla soru çözdüğünü hatasız şekilde takip edebilir.
 
     return dataframe
 
+
+# 1. calculate_recent_accuracy
+# Ne Yapar? Bir öğrencinin test çözerken gösterdiği son durumdaki başarısını ölçer.
+# Detay: Öğrencinin kronolojik olarak çözdüğü son 5 soruyu alır ve bunların başarı ortalamasını hesaplar.
 def calculate_recent_accuracy(student_df: pd.DataFrame, window_size: int = 5) -> float:
-    """Calculate recent accuracy for one student."""
+    recent_answers = student_df.sort_values('timestamp').tail(window_size)
 
-    recent_answers = student_df.sort_values("timestamp").tail(window_size)
-
-    return float(recent_answers["is_correct"].mean())
+    return float(recent_answers['is_correct'].mean())
 
 
-
+# 2. calculate_accuracy_change
+# Ne Yapar? Öğrencinin süreç içindeki gelişim/ilerleme hızını hesaplar.
+# Detay: Öğrencinin ilk çözdüğü 5 soru ile son çözdüğü 5 soru arasındaki başarı farkını bulur (Son başarı - İlk başarı). Sonuç pozitifse öğrenci kendini geliştirmiş demektir.
 def calculate_accuracy_change(student_df: pd.DataFrame) -> float:
-    """Calculate difference between early accuracy and recent accuracy."""
-
     student_df = student_df.sort_values('timestamp')
 
     first_answers = student_df.head(5)
     last_answers = student_df.tail(5)
 
-    eary_accuracy = first_answers['is_correct'].mean()
+    early_accuracy = first_answers['is_correct'].mean()
     recent_accuracy = last_answers['is_correct'].mean()
 
-    return float(recent_accuracy - eary_accuracy)
+    return float(recent_accuracy - early_accuracy)
 
 
+
+# 3. build_student_features
+# Ne Yapar? Ham etkileşim verilerini, öğrenci bazlı özet davranış raporlarına dönüştürür.
+# Detay: Veriyi öğrenci öğrenci gruplar; her öğrencinin toplam soru sayısını, genel başarısını, hızını, çözdüğü konuların çeşitliliğini ve üstteki iki fonksiyonu kullanarak gelişim metriklerini tek bir satıra indirger.
 def build_student_features(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Create student-level behavior features."""
-
     student_rows = []
 
     for student_id, student_df in dataframe.groupby('student_id'):
         student_rows.append(
             {
-                "student_id": student_id,
-                "student_total_attempts": len(student_df),
-                "student_final_accuracy": student_df["is_correct"].mean(),
+                'student_id': student_id,
+                'student_total_attempts': len(student_df),
+                'student_final_accuracy': student_df['is_correct'].mean(), 
                 "student_avg_elapsed_time": student_df["elapsed_time"].mean(),
-                "student_avg_difficulty_score": student_df[
-                    "difficulty_score"
-                ].mean(),
+                "student_avg_difficulty_score": student_df["difficulty_score"].mean(),
                 "student_topic_diversity": student_df["tags"].nunique(),
                 "student_recent_accuracy": calculate_recent_accuracy(student_df),
                 "student_accuracy_change": calculate_accuracy_change(student_df),
@@ -114,9 +115,10 @@ def build_student_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(student_rows)
 
 
+# 4. run_kmeans_clustering
+# Ne Yapar? Öğrencileri davranış benzerliklerine göre yapay zekayla gruplara ayırır.
+# Detay: Önce tüm verileri StandardScaler ile eşit ölçeğe getirir, ardından KMeans algoritmasıyla öğrencileri belirlenen küme sayısına (4 gruba) böler ve silhouette_score ile bu bölme işleminin ne kadar kaliteli olduğunu ölçer.
 def run_kmeans_clustering(student_features_df: pd.DataFrame) -> pd.DataFrame:
-    """Run K-Means clustering on student behavior features."""
-
     scaler = StandardScaler()
 
     scaled_features = scaler.fit_transform(
@@ -126,43 +128,37 @@ def run_kmeans_clustering(student_features_df: pd.DataFrame) -> pd.DataFrame:
     kmeans = KMeans(
         n_clusters=N_CLUSTERS,
         random_state=RANDOM_SEED,
-        n_init=10
+        n_init=10,
     )
-    # K-Means başlangıçta cluster merkezlerini rastgele seçer.
-    # Kötü başlangıç seçerse kötü cluster sonucu çıkabilir.
-    # n_init=10
-    # demek:
-    # K-Means’i 10 farklı rastgele başlangıçla dene, en iyi sonucu seç.
-    # Yani daha güvenli sonuç verir.
+    # K-Means algoritması ilk başlarken küme merkezlerini rastgele seçer ve bazen kötü bir başlangıç noktası yüzünden yanlış gruplama yapabilir. n_init=10 parametresi, algoritmanın 10 kez birbirinden bağımsız ve farklı rastgele noktalarla baştan başlayarak gruplama yapmasını söyler. Algoritma bu 10 deneme içinden en başarılı ve en kararlı olan sonucu seçer.
 
     cluster_labels = kmeans.fit_predict(scaled_features)
 
     clustered_df = student_features_df.copy()
-    clustered_df['cluster'] = cluster_labels
+    clustered_df["cluster"] = cluster_labels
 
     score = silhouette_score(scaled_features, cluster_labels)
-    # Öğrenciler kendi cluster’ına yakın mı, diğer cluster’lardan uzak mı?
-    # +1'e yakın → çok iyi cluster
-    # 0 civarı → clusterlar karışık
-    # -1'e yakın → kötü cluster
+    # Bu skor, yapay zekanın yaptığı kümeleme/gruplama işleminin ne kadar kaliteli ve doğru olduğunu ölçen bir başarı metriğidir.
+    # Mantığı: Oluşturulan grupların kendi içinde ne kadar sıkı (birbirine yakın) ve diğer gruplardan ne kadar uzak (net ayrılmış) olduğunu kontrol eder.
 
     print(f"Silhouette score: {score:.3f}")
 
     return clustered_df
 
 
+# 5. create_cluster_summary
+# Ne Yapar? Oluşan öğrenci gruplarının karakteristik özelliklerini (profilini) çıkarır.
+# Detay: Oluşan 4 kümenin her birinin ortalama hızını, başarısını ve o kümede kaç öğrenci olduğunu gösteren bir özet tablo hazırlar. (Örn: "2. Küme: Çok hızlı çözen ama başarısı düşük olanlar").
 def create_cluster_summary(clustered_df: pd.DataFrame) -> pd.DataFrame:
-    """Create a summary table for each cluster."""
-
     summary_df = (
-        clustered_df.groupby('cluster')[STUDENT_FEATURE_COLUMNS]
+        clustered_df.groupby("cluster")[STUDENT_FEATURE_COLUMNS]
         .mean()
         .round(3)
         .reset_index()
     )
 
-    summary_df['student_count'] = (
-        clustered_df.groupby('cluster')['student_id']
+    summary_df["student_count"] = (
+        clustered_df.groupby("cluster")["student_id"]
         .count()
         .values
     )
@@ -170,9 +166,10 @@ def create_cluster_summary(clustered_df: pd.DataFrame) -> pd.DataFrame:
     return summary_df
 
 
+# 6. plot_clusters
+# Ne Yapar? Öğrenci gruplarını bizim görebileceğimiz şekilde grafiğe döker.
+# Detay: Elimizdeki çok sayıda özelliği (7 adet) grafik üzerinde gösterebilmek için PCA algoritmasıyla 2 boyuta indirger ve her öğrenci kümesini farklı bir renkle ekrana çizip bilgisayara kaydeder.
 def plot_clusters(clustered_df: pd.DataFrame) -> None:
-    """Create a 2D PCA plot of student clusters."""
-    
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(clustered_df[STUDENT_FEATURE_COLUMNS])
 
@@ -181,9 +178,9 @@ def plot_clusters(clustered_df: pd.DataFrame) -> None:
 
     plot_df = pd.DataFrame(
         {
-            'pca_1': pca_features[:, 0],
-            'pca_2': pca_features[:, 1],
-            'cluster': clustered_df['cluster']
+            "pca_1": pca_features[:, 0],
+            "pca_2": pca_features[:, 1],
+            "cluster": clustered_df["cluster"],
         }
     )
 
@@ -208,6 +205,9 @@ def plot_clusters(clustered_df: pd.DataFrame) -> None:
     plt.close()
 
 
+# 7. main
+# Ne Yapar? Tüm bu kümeleme ve analiz sürecini baştan sona yöneten ana şeftir.
+# Detay: Klasörleri kontrol eder, veriyi yükler, öğrencilerin özelliklerini çıkartıp gruplama yapar ve sonuç raporları ile grafikleri ilgili klasörlere kaydeder.
 def main() -> None:
     """Run student behavior clustering."""
 
@@ -235,55 +235,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# # ------------------------------------------------------------
-# # NOTES
-# # ------------------------------------------------------------
-
-# # This file groups students based on learning behavior.
-
-# # Main idea:
-# # Students are not all the same.
-# # Some students are accurate, some are slow, some improve, and some struggle.
-
-# # Input:
-# # 02_data/processed/demo_features.csv
-
-# # Output:
-# # student_clusters.csv
-# # cluster_summary.csv
-# # student_clusters_pca.png
-
-# # Main features:
-# # student_total_attempts:
-# # How many questions the student answered.
-
-# # student_final_accuracy:
-# # Overall correctness rate.
-
-# # student_avg_elapsed_time:
-# # Average time spent on questions.
-
-# # student_avg_difficulty_score:
-# # Average difficulty of attempted questions.
-
-# # student_topic_diversity:
-# # How many different topics the student practiced.
-
-# # student_recent_accuracy:
-# # Accuracy on the last few questions.
-
-# # student_accuracy_change:
-# # Recent accuracy minus early accuracy.
-# # Positive value means the student improved.
-
-# # K-Means:
-# # Groups similar students together.
-
-# # PCA plot:
-# # Converts many behavior features into 2D so we can visualize clusters.
-
-# # Why this matters:
-# # Clustering helps the tutor understand different learner types.
-# # Later, recommendations and RL policies can be analyzed by student cluster.

@@ -10,16 +10,17 @@ from pathlib import Path
 import pandas as pd
 
 
-RANDOM_POLICY_PATH = Path("06_results/tables/rl_random_policy_results.csv")
-Q_LEARNING_PATH = Path("06_results/tables/q_learning_results.csv")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-OUTPUT_DIR = Path("06_results/tables")
+RANDOM_POLICY_PATH = PROJECT_ROOT / "06_results" / "tables" / "rl_random_policy_results.csv"
+Q_LEARNING_PATH = PROJECT_ROOT / "06_results" / "tables" / "q_learning_results.csv"
+
+OUTPUT_DIR = PROJECT_ROOT / "06_results" / "tables"
 OUTPUT_PATH = OUTPUT_DIR / "rl_policy_comparison.csv"
 
 
+# load_results: İki farklı yönteme ait .csv sonuç dosyalarını bilgisayardan yükler. Karışıklığı önlemek için verilerin sonuna "random_policy" veya "q_learning" yazan yeni bir ayırt edici sütun ekler.
 def load_results(path: Path, policy_name: str) -> pd.DataFrame:
-    """Load policy result file."""
-
     if not path.exists():
         raise FileNotFoundError(f"Missing file: {path}")
 
@@ -29,10 +30,9 @@ def load_results(path: Path, policy_name: str) -> pd.DataFrame:
     return dataframe
 
 
-def summarize_policy(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Create summary metrics for one policy."""
-
-    summary = (
+# summarize_policies: İki yöntemin tüm verilerini gruplayarak; hamle başına düşen ortalama ödülü, öğrencilerin soruları doğru yanıtlama oranını, yapay zekanın isabetli soru tahmin olasılığını ve toplam atılan adım sayısını hesaplayıp 3 basamaklı hassasiyetle özetler.
+def summarize_policies(dataframe: pd.DataFrame) -> pd.DataFrame:
+    summary_df = (
         dataframe.groupby("policy")
         .agg(
             average_reward=("reward", "mean"),
@@ -44,12 +44,12 @@ def summarize_policy(dataframe: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
 
-    return summary
+    return summary_df
 
 
+
+# main: Karşılaştırma motorudur. Her iki yöntemin verilerini yükler, pd.concat ile alt alta birleştirir, summarize_policies ile aralarındaki performans farkını hesaplar ve bu nihai karşılaştırma tablosunu ekrana basıp yeni bir .csv dosyası olarak kaydeder.
 def main() -> None:
-    """Compare random policy and Q-learning policy."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     random_df = load_results(RANDOM_POLICY_PATH, "random_policy")
@@ -57,7 +57,7 @@ def main() -> None:
 
     combined_df = pd.concat([random_df, q_learning_df], ignore_index=True)
 
-    comparison_df = summarize_policy(combined_df)
+    comparison_df = summarize_policies(combined_df)
     comparison_df.to_csv(OUTPUT_PATH, index=False)
 
     print("RL policy comparison completed successfully.")
@@ -68,16 +68,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# NOTES
-# This file compares two RL policies:
-# 1. random_policy:
-#    Chooses easy, medium, or hard randomly.
-#
-# 2. q_learning:
-#    Learns which action gives better reward.
-#
-# Why this matters:
-# We need to show whether learning-based decision making performs better
-# than a random tutoring strategy.
