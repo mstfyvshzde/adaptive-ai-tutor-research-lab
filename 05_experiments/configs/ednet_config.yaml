@@ -5,8 +5,8 @@ dataset:
   name: EdNet
   raw_data_dir: 02_data/external/ednet
   processed_data_dir: 02_data/processed/ednet
-  target_students: 100
-  target_interactions: 5000
+  target_students: 1000
+  target_interactions: 50000
   min_interactions_per_student: 20
   max_interactions_per_student: 100
   random_seed: 17

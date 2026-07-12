@@ -168,9 +168,10 @@ def create_ednet_subset(config: dict) -> pd.DataFrame:
 
     subset = pd.concat(selected_frames, ignore_index=True)
 
-    if len(subset) > target_interactions:
-        subset = subset.head(target_interactions)
-
+    # Do not trim individual rows after concatenation.
+    # Row-level trimming can cut the last selected student's history below
+    # min_interactions_per_student. The subset is allowed to be slightly above
+    # the target interaction count to preserve valid student histories.
     subset = subset.sort_values(["student_id", "timestamp"]).reset_index(drop=True)
 
     return subset

@@ -1,0 +1,5 @@
+model,accuracy,precision,recall,f1,roc_auc,log_loss
+dummy_majority,0.5905,0.5905,1.0,0.7425,0.5,14.76
+logistic_regression,0.646,0.6547,0.8475,0.7387,0.6792,0.6299
+random_forest,0.6533,0.6702,0.8128,0.7347,0.6928,0.6203
+gradient_boosting,0.6621,0.6697,0.8441,0.7468,0.708,0.612
