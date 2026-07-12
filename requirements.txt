@@ -13,4 +13,4 @@ xgboost
 lightgbm
 streamlit
 plotly
-pytest
+pytestPyYAML>=6.0

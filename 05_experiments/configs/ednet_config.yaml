@@ -1,38 +1,48 @@
+experiment_name: ednet_v2_real_dataset_validation
+version: v2
+
 dataset:
-  name: ednet
-  version: controlled_subset
-  target_students: 10000
-  target_interactions: 500000
+  name: EdNet
+  raw_data_dir: 02_data/external/ednet
+  processed_data_dir: 02_data/processed/ednet
+  target_students: 100
+  target_interactions: 5000
   min_interactions_per_student: 20
-  max_interactions_per_student: 150
+  max_interactions_per_student: 100
   random_seed: 17
 
 task:
   type: correctness_prediction
   target_column: is_correct
+  split_strategy: time_based
+  test_size: 0.2
 
-processing:
-  use_question_answer_interactions_only: true
-  exclude_non_question_events: true
-  sort_by_student_and_time: true
-  save_processed_subset: true
-
-output_paths:
-  processed_data: 02_data/processed/ednet/ednet_features.csv
-  metrics: 06_results/tables/ednet/ednet_supervised_metrics.csv
-  comparison: 06_results/tables/ednet/v1_v2_comparison.csv
+features:
+  include_student_history: true
+  include_question_history: true
+  include_rolling_accuracy: true
+  rolling_windows:
+    - 5
+    - 10
+  include_elapsed_time: true
+  include_time_since_previous: true
 
 models:
-  - dummy_majority
-  - logistic_regression
-  - random_forest
-  - gradient_boosting
+  baseline:
+    - dummy_majority
+  supervised:
+    - logistic_regression
+    - random_forest
+    - gradient_boosting
 
-evaluation:
-  metrics:
-    - accuracy
-    - precision
-    - recall
-    - f1
-    - roc_auc
-    - log_loss
+outputs:
+  mapped_interactions: 02_data/processed/ednet/ednet_interactions_mapped.csv
+  feature_dataset: 02_data/processed/ednet/ednet_features.csv
+  supervised_metrics: 06_results/tables/ednet/ednet_supervised_metrics.csv
+  v1_v2_comparison: 06_results/tables/ednet/synthetic_vs_ednet_comparison.csv
+
+notes:
+  full_ednet_processing: false
+  deep_learning_models: false
+  real_rl_environment: false
+  purpose: controlled_real_dataset_validation
