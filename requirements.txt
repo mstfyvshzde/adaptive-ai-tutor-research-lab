@@ -6,11 +6,12 @@ seaborn
 jupyter
 notebook
 ipykernel
-pyyaml
+PyYAML
 tqdm
 scipy
 xgboost
 lightgbm
 streamlit
 plotly
-pytestPyYAML>=6.0
+pytest
+PyYAML>=6.0

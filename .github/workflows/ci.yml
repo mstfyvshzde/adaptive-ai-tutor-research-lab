@@ -7,6 +7,44 @@ on:
   pull_request:
     branches:
       - main
+
+jobs:
+  python-checks:
+    name: Python checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install CI dependencies
+        run: |
+          python -m pip install numpy pandas scikit-learn matplotlib PyYAML pytest streamlit scipy
+
+      - name: Compile Python files
+        run: |
+          python -m compileall 04_src run_pipeline.py tests
+
+      - name: Run tests
+        run: |
+          pytest -qname: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
