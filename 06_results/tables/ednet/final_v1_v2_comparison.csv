@@ -1,0 +1,6 @@
+stage,data_source,interactions,best_model,roc_auc,main_message
+V1 Synthetic,Synthetic prototype data,1452,logistic_regression,0.9077,High performance on controlled synthetic data.
+EdNet 5k,Real EdNet KT1,5017,gradient_boosting,0.625,Small real-data pilot establishes baseline performance.
+EdNet 50k,Real EdNet KT1,50081,gradient_boosting,0.708,Performance improves with more student interactions.
+EdNet 200k,Real EdNet KT1,200091,gradient_boosting,0.7222,Medium-scale validation confirms the scaling trend.
+EdNet 500k Final,Real EdNet KT1,500057,gradient_boosting,0.7301,Best real-data result selected after ablation (baseline_features).

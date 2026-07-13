@@ -1,0 +1,5 @@
+scale_name,students,questions,interactions,average_correctness,best_model,best_accuracy,best_f1,best_roc_auc,best_log_loss
+ednet_5k_pilot,80,2245,5017,0.6029,gradient_boosting,0.5996,0.7116,0.625,0.6683
+ednet_50k_small,798,7577,50081,0.5801,gradient_boosting,0.6621,0.7468,0.708,0.612
+ednet_200k_medium,2943,10313,200091,0.5866,gradient_boosting,0.6731,0.7496,0.7222,0.6013
+ednet_500k_max,6419,11424,500057,0.5941,gradient_boosting,0.6799,0.7523,0.7301,0.5939
