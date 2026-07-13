@@ -140,6 +140,35 @@ Model confidence was also strongly related to prediction accuracy:
 | High | 17.5% |
 | Very High | 6.1% |
 
+
+## Visual Results
+
+The EdNet V2 analysis includes final visual outputs for the research report.
+
+### Research Pipeline
+
+![Adaptive AI Tutor V2 Research Pipeline](06_results/figures/ednet/pipeline_diagram.png)
+
+### ROC-AUC by Dataset Scale
+
+![ROC-AUC by EdNet Dataset Scale](06_results/figures/ednet/roc_auc_by_scale.png)
+
+### Feature Ablation
+
+![Baseline vs Enhanced Feature Set](06_results/figures/ednet/feature_ablation.png)
+
+### Feature Importance
+
+![Top Feature Importance Signals](06_results/figures/ednet/top_feature_importance.png)
+
+### Error Analysis
+
+![Error Rate by Model Confidence](06_results/figures/ednet/error_by_confidence.png)
+
+![Error Rate by Student History](06_results/figures/ednet/error_by_student_history.png)
+
+![Error Rate by Question Difficulty](06_results/figures/ednet/error_by_difficulty.png)
+
 ## Main Components
 
 ### 1. Data Preparation
