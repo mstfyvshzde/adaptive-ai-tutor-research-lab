@@ -430,4 +430,4 @@ Estimated length: 6-8 pages
 | Ethics + Future Work + Conclusion | 8-10 |
 | References + Appendix | 8-11 |
 
-Estimated final report length: 50-60 pages.
+Estimated final report length: 40-60 pages, depending on final manual writing depth.
