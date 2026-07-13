@@ -57,6 +57,9 @@ Correctness is computed as:
 
 ## 4. Methodology
 
+![Adaptive AI Tutor V2 Research Pipeline](../figures/ednet/pipeline_diagram.png)
+
+
 The project uses a leakage-free feature engineering pipeline.
 
 All history-based features are computed using only previous interactions.
@@ -91,6 +94,9 @@ A time-based split is used to better simulate future prediction.
 
 ## 6. Scale Experiments
 
+![ROC-AUC by EdNet Dataset Scale](../figures/ednet/roc_auc_by_scale.png)
+
+
 | Stage | Data Source | Interactions | Best Model | ROC-AUC |
 |---|---|---:|---|---:|
 | V1 Synthetic | Synthetic prototype data | 1,452 | Logistic Regression | 0.9077 |
@@ -105,6 +111,9 @@ This suggests that the prediction pipeline benefits from larger student interact
 
 ## 7. Feature Ablation
 
+![Baseline vs Enhanced Feature Set](../figures/ednet/feature_ablation.png)
+
+
 | Feature Set | Best Model | Accuracy | F1 | ROC-AUC | Log Loss |
 |---|---|---:|---:|---:|---:|
 | Baseline Features | Gradient Boosting | 0.6799 | 0.7523 | 0.7301 | 0.5939 |
@@ -115,6 +124,9 @@ The enhanced feature set achieved comparable performance but did not produce a m
 This suggests that the baseline history-based features were already strong for this task.
 
 ## 8. Feature Importance
+
+![Top Feature Importance Signals](../figures/ednet/top_feature_importance.png)
+
 
 | Rank | Feature | Importance |
 |---:|---|---:|
@@ -132,6 +144,9 @@ This supports the educational interpretation that correctness prediction depends
 
 ### Student History
 
+![Error Rate by Student History](../figures/ednet/error_by_student_history.png)
+
+
 | Student History | Error Rate |
 |---|---:|
 | 0-4 attempts | 35.5% |
@@ -144,6 +159,9 @@ The model became more reliable when more student interaction history was availab
 
 ### Question Difficulty
 
+![Error Rate by Question Difficulty](../figures/ednet/error_by_difficulty.png)
+
+
 | Difficulty Group | Error Rate |
 |---|---:|
 | Easy | 22.4% |
@@ -154,6 +172,9 @@ The model became more reliable when more student interaction history was availab
 The model made more errors on harder question groups, which is expected in educational prediction tasks.
 
 ### Model Confidence
+
+![Error Rate by Model Confidence](../figures/ednet/error_by_confidence.png)
+
 
 | Confidence Group | Error Rate |
 |---|---:|
