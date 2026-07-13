@@ -1,7 +1,7 @@
 # Adaptive AI Tutor Research Lab  
 ## Academic-Style Final Research Report Outline
 
-Target length: 50-60 pages  
+Target length: 40-60 pages  
 Project type: Applied Machine Learning Research Portfolio Project  
 Domain: Educational Data Mining / Adaptive Learning / Knowledge Tracing
 
