@@ -1,5 +1,5 @@
 # Adaptive AI Tutor Research Lab  
-## Harvard-Style Final Research Report Outline
+## Academic-Style Final Research Report Outline
 
 Target length: 50-60 pages  
 Project type: Applied Machine Learning Research Portfolio Project  
