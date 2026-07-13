@@ -30,68 +30,24 @@ The analysis shows that the strongest predictive signals are related to the rela
 
 # Table of Contents
 
-
-# 1. Introduction
-
-
-# 2. Background and Related Work
-
-
-# 3. Dataset
-
-
-# 4. Methodology
-
-![Adaptive AI Tutor V2 Research Pipeline](../figures/ednet/pipeline_diagram.png)
-
-
-# 5. Feature Engineering
-
-
-# 6. Models
-
-
-# 7. Experiments
-
-
-# 8. Results
-
-![ROC-AUC by EdNet Dataset Scale](../figures/ednet/roc_auc_by_scale.png)
-
-
-# 9. Ablation Study
-
-![Baseline vs Enhanced Feature Set](../figures/ednet/feature_ablation.png)
-
-
-# 10. Feature Importance
-
-![Top Feature Importance Signals](../figures/ednet/top_feature_importance.png)
-
-
-# 11. Error Analysis
-
-
-# 12. Discussion
-
-
-# 13. Limitations
-
-
-# 14. Ethics and Responsible AI
-
-
-# 15. Future Work
-
-
-# 16. Conclusion
-
-
-# 17. References
-
-
-# 18. Appendix
-
+1. Introduction  
+2. Background and Related Work  
+3. Dataset  
+4. Methodology  
+5. Feature Engineering  
+6. Models  
+7. Experiments  
+8. Results  
+9. Ablation Study  
+10. Feature Importance  
+11. Error Analysis  
+12. Discussion  
+13. Limitations  
+14. Ethics and Responsible AI  
+15. Future Work  
+16. Conclusion  
+17. References  
+18. Appendix  
 
 ---
 
@@ -943,12 +899,3 @@ visual reporting,
 reproducible project structure.
 It is a strong applied machine learning portfolio project and a solid foundation for deeper future work in knowledge tracing and adaptive tutoring.
 EOF
-
-## 2) Kontrol et
-
-wc -l 06_results/reports/final_ednet_v2_paper.md
-grep -n "Figure\|figures/ednet\|References\|Conclusion" 06_results/reports/final_ednet_v2_paper.md
-3) Commit + push
-git add 06_results/reports/final_ednet_v2_paper.md
-git commit -m "Add final EdNet V2 paper source"
-git push origin main
